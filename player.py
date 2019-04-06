@@ -25,17 +25,10 @@ class Player(pygame.sprite.Sprite):
         self.dy = 0
         self.swidth = conf.width
         self.sheight = conf.height
-        self.things = pygame.sprite.Group()
 
-
-    def addThing(self, thing):
-        self.things.add(thing)
-    def addThings(self, things):
-        self.things = things
-
-    def onFloor(self):
+    def onFloor(self, level):
         self.rect.y += self.gravity
-        ret = pygame.sprite.spritecollide(self, self.things, False)
+        ret = pygame.sprite.spritecollide(self, level.platforms, False)
         self.rect.y -= self.gravity
         return ret
 
@@ -50,7 +43,7 @@ class Player(pygame.sprite.Sprite):
         elif self.dx > 0:
             self.dx -= self.resist
 
-        if self.onFloor():   # Still?
+        if self.onFloor(level):   # Still?
             if keys.state['u']:
                 self.dy -= self.jump_power
             else:
@@ -58,8 +51,14 @@ class Player(pygame.sprite.Sprite):
         else: 
             self.dy += self.gravity
 
+        if pygame.sprite.spritecollide(self, level.portals, False):
+            return 'next'
+
+        if pygame.sprite.spritecollide(self, level.thones, False):
+            return 'dead'
+
         self.rect.x += self.dx
-        hits = pygame.sprite.spritecollide(self, self.things, False)
+        hits = pygame.sprite.spritecollide(self, level.platforms, False)
         for hit in hits:
             if self.dx > 0:
                 self.rect.right = hit.rect.left
@@ -68,7 +67,7 @@ class Player(pygame.sprite.Sprite):
         if hits:    self.dx = 0
 
         self.rect.y += self.dy
-        hits = pygame.sprite.spritecollide(self, self.things, False)
+        hits = pygame.sprite.spritecollide(self, level.platforms, False)
         for hit in hits:
             if self.dy > 0:
                 self.rect.bottom = hit.rect.top
@@ -80,7 +79,8 @@ class Player(pygame.sprite.Sprite):
         self.rect.left = max(self.rect.left, 0)
         self.rect.right = min(self.rect.right, self.swidth)
 
-        if self.rect.bottom > self.sheight:
-            print("GAME OVER")
-            pygame.quit()
-            sys.exit(0)
+        self.rect.bottom = min(self.rect.bottom, self.sheight)
+        # if self.rect.bottom > self.sheight:
+        #     print("GAME OVER")
+        #     pygame.quit()
+        #     sys.exit(0)
