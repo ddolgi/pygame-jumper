@@ -15,9 +15,12 @@ class Player(pygame.sprite.Sprite):
         # pygame.sprite.Sprite.__init__(self)
         # super().__init__()
 
-        self.image = pygame.image.load(conf.img_dir + imgfile)
-        self.pwidth = self.image.get_width()
-        self.pheight = self.image.get_height()
+        self.rimage = pygame.image.load(conf.img_dir + imgfile)
+        self.limage = pygame.transform.flip(self.rimage, True, False)
+        self.image = self.rimage
+        self.x0 = x
+        self.y0 = y
+
         self.rect = self.image.get_rect()
         self.rect.x = x
         self.rect.y = y
@@ -25,6 +28,12 @@ class Player(pygame.sprite.Sprite):
         self.dy = 0
         self.swidth = conf.width
         self.sheight = conf.height
+
+    def reset(self):
+        self.rect.x = self.x0
+        self.rect.y = self.y0
+        self.dx = 0
+        self.dy = 0
 
     def onFloor(self, level):
         self.rect.y += self.gravity
@@ -35,11 +44,13 @@ class Player(pygame.sprite.Sprite):
     def update(self, keys, level):
         if keys.state['l']:
             self.dx = max(self.dx - self.addum, -self.max_momentum)
+            self.image = self.limage
         elif self.dx < 0:
             self.dx += self.resist
 
         if keys.state['r']:
             self.dx = min(self.dx + self.addum, self.max_momentum)
+            self.image = self.rimage
         elif self.dx > 0:
             self.dx -= self.resist
 
@@ -50,12 +61,6 @@ class Player(pygame.sprite.Sprite):
                 self.dy = 0
         else: 
             self.dy += self.gravity
-
-        if pygame.sprite.spritecollide(self, level.portals, False):
-            return 'next'
-
-        if pygame.sprite.spritecollide(self, level.thones, False):
-            return 'dead'
 
         self.rect.x += self.dx
         hits = pygame.sprite.spritecollide(self, level.platforms, False)
@@ -80,6 +85,24 @@ class Player(pygame.sprite.Sprite):
         self.rect.right = min(self.rect.right, self.swidth)
 
         self.rect.bottom = min(self.rect.bottom, self.sheight)
+
+        if pygame.sprite.spritecollide(self, level.portals, False):
+            return 'next'
+
+        if pygame.sprite.spritecollide(self, level.thones, False):
+            return 'dead'
+
+        if pygame.sprite.spritecollide(self, level.keys, False):
+            return 'key'
+
+        if pygame.sprite.spritecollide(self, level.doors, False):
+            return 'next' if not level.bKey else None
+
+        pygame.sprite.spritecollide(self, level.rgems, True)
+        pygame.sprite.spritecollide(self, level.bgems, True)
+        pygame.sprite.spritecollide(self, level.ggems, True)
+        pygame.sprite.spritecollide(self, level.ygems, True)
+
         # if self.rect.bottom > self.sheight:
         #     print("GAME OVER")
         #     pygame.quit()
